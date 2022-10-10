@@ -1,13 +1,16 @@
 import { Repository } from 'typeorm';
 import { Event } from './entities/event.entity';
+import { Workshop } from './entities/workshop.entity';
 import App from "../../app";
-
+import { Raw } from "typeorm"
 
 export class EventsService {
   private eventRepository: Repository<Event>;
+  private workShopRepository: Repository<Workshop>;
 
   constructor(app: App) {
     this.eventRepository = app.getDataSource().getRepository(Event);
+    this.workShopRepository = app.getDataSource().getRepository(Workshop);
   }
 
   async getWarmupEvents() {
@@ -92,7 +95,14 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    let events = await this.eventRepository.find();
+    let eventsWithWorkshopsResult =[];
+     for (const event of events) {
+      let workshops =  await this.workShopRepository.find({where: {eventId: event.id}});
+      const eventsWithWorkshops = Object.assign(event, {"workshops": workshops});
+      eventsWithWorkshopsResult.push(eventsWithWorkshops);
+    }
+     return eventsWithWorkshopsResult;
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -162,6 +172,14 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    let events = await this.eventRepository.find({where: {createdAt: Raw((alias) => `${alias} > NOW()`) }});
+    let eventsWithWorkshopsResult =[];
+     for (const event of events) {
+      let workshops =  await this.workShopRepository.find({where: {eventId: event.id}});
+      const eventsWithWorkshops = Object.assign(event, {"workshops": workshops});
+      eventsWithWorkshopsResult.push(eventsWithWorkshops);
+    }
+    console.log(eventsWithWorkshopsResult)
+     return eventsWithWorkshopsResult;
   }
 }
